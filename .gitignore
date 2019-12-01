@@ -1,0 +1,4 @@
+# Ignore everything except files which have an extension (effectively, ignore binaries)
+*
+!/**/
+!*.*
