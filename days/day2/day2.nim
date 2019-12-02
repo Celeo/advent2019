@@ -1,7 +1,7 @@
 import sequtils, strformat, strutils
 
 proc processSingle(codes: var seq[int], position: int): int =
-  ## Handles a single iteration of processing.
+  ## Handle a single iteration of processing.
   ##
   ## Note: mutates the sequence.
   result = position + 4
@@ -22,15 +22,35 @@ proc processSingle(codes: var seq[int], position: int): int =
     echo(&"Unknown code {code} at position {position}")
     quit(1)
 
-proc processAll(codes: var seq[int]) =
-  ## Processes every code in the sequence until reaching code 99.
-  ##
-  ## Note: mutates the sequence.
+proc processAll(codes: seq[int], noun = 12, verb = 2): seq[int] =
+  ## Process every code in the sequence until reaching code 99.
+  var codesCopy = codes
+  codesCopy[1] = noun
+  codesCopy[2] = verb
   var position = 0
   while position != -1:
-    position = processSingle(codes, position)
+    position = processSingle(codesCopy, position)
+  codesCopy
+
+proc guessInputs(codes: seq[int], desired: int): (int, int) =
+  ## Determine the inputs required to get the desired value in the opcode sequence.
+  ##
+  ## "Guesses" noun and verb from [0, 0] to [99, 99].
+  var noun = 0
+  var verb = 0
+  while true:
+    var testCodes = codes
+    let testResult = processAll(testCodes, noun, verb)
+    if testResult[0] == desired:
+      return (noun, verb)
+    verb.inc()
+    if verb == 99:
+      verb = 0
+      noun.inc()
 
 when isMainModule:
   var codes = readFile("input.txt").strip().split(",").map(parseInt)
-  processAll(codes)
-  echo(codes[0])
+  let part1Codes = processAll(codes)
+  echo("Part 1: " & $part1Codes[0])
+  let (noun, verb) = guessInputs(codes, 19690720)
+  echo("Part 2: " & $(100 * noun + verb))
