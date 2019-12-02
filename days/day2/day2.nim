@@ -1,4 +1,4 @@
-import sequtils, strformat, strutils
+import sequtils, strutils
 
 proc processSingle(codes: var seq[int], position: int): int =
   ## Handle a single iteration of processing.
@@ -8,19 +8,13 @@ proc processSingle(codes: var seq[int], position: int): int =
   let code = codes[position]
   if code == 99:
     return -1
-  elif code == 1:
-    let arg1 = codes[position + 1]
-    let arg2 = codes[position + 2]
-    let arg3 = codes[position + 3]
+  let arg1 = codes[position + 1]
+  let arg2 = codes[position + 2]
+  let arg3 = codes[position + 3]
+  if code == 1:
     codes[arg3] = codes[arg1] + codes[arg2]
   elif code == 2:
-    let arg1 = codes[position + 1]
-    let arg2 = codes[position + 2]
-    let arg3 = codes[position + 3]
     codes[arg3] = codes[arg1] * codes[arg2]
-  else:
-    echo(&"Unknown code {code} at position {position}")
-    quit(1)
 
 proc processAll(codes: seq[int], noun = 12, verb = 2): seq[int] =
   ## Process every code in the sequence until reaching code 99.
@@ -49,7 +43,7 @@ proc guessInputs(codes: seq[int], desired: int): (int, int) =
       noun.inc()
 
 when isMainModule:
-  var codes = readFile("input.txt").strip().split(",").map(parseInt)
+  let codes = readFile("input.txt").strip().split(",").map(parseInt)
   let part1Codes = processAll(codes)
   echo("Part 1: " & $part1Codes[0])
   let (noun, verb) = guessInputs(codes, 19690720)
