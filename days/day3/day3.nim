@@ -6,11 +6,13 @@ proc distanceTo(a: (int, int)): int =
 
 proc layWire(directions: seq[string]): HashSet[(int, int)] =
   ## Return a seq of all the points the wire touches.
-  var x = 0
-  var y = 0
+  var
+    x = 0
+    y = 0
   for direction in directions:
-    let d = direction[0]
-    let amount = direction.substr(1).parseInt()
+    let
+      d = direction[0]
+      amount = direction.substr(1).parseInt()
     var
       xMod = 0
       xMult = 1
@@ -46,6 +48,5 @@ when isMainModule:
   var least = 2 ^ 32
   for point in firstPoints:
     if point in secondPoints:
-      let distance = distanceTo(point)
-      least = min(least, distance)
+      least = min(least, distanceTo(point))
   echo(least)
