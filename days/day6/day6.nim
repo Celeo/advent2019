@@ -1,4 +1,4 @@
-import sequtils, strformat, strutils, tables
+import sequtils, strutils, sets, tables
 import simple_graph # https://github.com/erhlee-bird/simple_graph
 
 proc findOutward(graph: DirectedGraph, node: string, distances: var TableRef[string, int], length = 0) =
@@ -9,14 +9,21 @@ proc findOutward(graph: DirectedGraph, node: string, distances: var TableRef[str
   for orbiter in orbiters:
     findOutward(graph, orbiter, distances, length + 1)
 
-# proc findBetween(graph: DirectedGraph, a: string, b: string, distances: var TableRef[string, int], length = 0) =
-#   for (left, right) in graph.edges().filterIt(it[0] == a or it[1] == a).mapIt((it[0], it[1])):
-#     echo(left, " ", right)
-#   distances[a] = length
-#   if orbiters.len() <= 1:
-#     return
-#   for orbiter in orbiters:
-#     findBetween(graph, orbiter, b, distances, length + 1)
+proc findBetween(graph: DirectedGraph, currentPt: string, endPt: string, seen: var HashSet[string], length = 0): int =
+  seen.incl(currentPt)
+  for (left, right) in graph.edges().filterIt(it[0] == currentPt or it[1] == currentPt).mapIt((it[0], it[1])):
+    if left == endPt:
+      return length
+    if right == endPt:
+      return length
+    if right notin seen:
+      let rightLen = findBetween(graph, right, endPt, seen, length + 1)
+      if rightLen != 0:
+        return rightLen
+    if left notin seen:
+      let leftLen = findBetween(graph, left, endPt, seen, length + 1)
+      if leftLen != 0:
+        return leftLen
 
 when isMainModule:
   let
@@ -39,15 +46,10 @@ when isMainModule:
     findOutward(graph, "COM", distances)
     var distanceValues: seq[int] = @[]
     for (k, v) in distances.pairs():
-      echo(&"{k}: {v}")
       distanceValues.add(v)
     echo("Part 1: ", distanceValues.foldl(a + b))
 
-  # block:
-  #   var distances = newTable[string, int]()
-  #   findBetween(graph, "SAN", "YOU", distances)
-  #   var distanceValues: seq[int] = @[]
-  #   for (k, v) in distances.pairs():
-  #     echo(&"{k}: {v}")
-  #     distanceValues.add(v)
-  #   echo("Part 2: ", distanceValues.foldl(a + b))
+  block:
+    var seen = initHashSet[string]()
+    let length = findBetween(graph, "SAN", "YOU", seen)
+    echo("Part 2: ", length - 1)
