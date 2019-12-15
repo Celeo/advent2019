@@ -1,7 +1,4 @@
-import algorithm, math,
-  logging, rdstdin,
-  sequtils, strformat,
-  strutils, tables
+import algorithm, math, logging, sequtils, strformat, strutils, tables
 
 const argumentCount = {
   1: 3,
@@ -17,22 +14,18 @@ const argumentCount = {
 
 type
   ArgMode = enum
-    ## Represent the two types of argument modes.
     amPosition = 0
     amImmediate = 1
 
   Opcode = object
-    ## Represent all the parts of a complex opcode.
     code: int
     argCount: int
     argModes: seq[ArgMode]
 
 proc newOpcode(code: int, argCount: int, argModes: seq[ArgMode]): Opcode =
-  ## Create a new Opcode object.
   Opcode(code: code, argCount: argCount, argModes: argModes)
 
 proc parseOpcode(code: int): Opcode =
-  ## Parse the complex opcode into its individual components.
   var s = $code
   while s.len() < 4:
     s = "0" & s
@@ -49,10 +42,7 @@ proc getAt(codes: seq[int], position: int, offset: int, argMode: ArgMode): int =
   else:
     codes[codes[position + offset]]
 
-proc processSingle(codes: var seq[int], position: int): int =
-  ## Process a single instruction.
-  ##
-  ## **Returns**: the new position
+proc processSingle(codes: var seq[int], position: int, inputs: var seq[int], output: var seq[int]): int =
   debug(&"New processor pass, position is {position}")
   let code = codes[position]
   let opcode = parseOpcode(code)
@@ -73,14 +63,8 @@ proc processSingle(codes: var seq[int], position: int): int =
     codes[codes[position + 3]] = arg1 * arg2
   elif opcode.code == 3:
     debug("opcode.code is 3")
-    #[
-      TODO
-        This has to be changed so that it can _either_ take input from
-        the user, _or_ take input from a previously-supplied value. This
-        is how the different amps will send values to the next.
-    ]#
-    let val = readLineFromStdin("Enter value: ").parseInt()
-    debug("\n\n")
+    let val = inputs[0]
+    inputs.delete(0)
     if opcode.argModes[0] == amImmediate:
       codes[position + 1] = val
     else:
@@ -92,7 +76,7 @@ proc processSingle(codes: var seq[int], position: int): int =
       val = codes[position + 1]
     else:
       val = codes[codes[position + 1]]
-    echo(val)
+    output.add(val)
   elif opcode.code == 5:
     debug("opcode.code is 5")
     let
@@ -136,18 +120,35 @@ proc processSingle(codes: var seq[int], position: int): int =
   debug(&"Advancing position by {positionAdvance}")
   position + positionAdvance
 
-proc processAll(codes: seq[int]): seq[int] =
-  ## Process the entire sequence of codes.
+proc processAll(codes: seq[int], phase: int, signal: int): seq[int] =
   var
     codesMut = codes
     position = 0
+    inputs = @[phase, signal]
   while position != -1:
-    position = processSingle(codesMut, position)
-  codesMut
+    position = processSingle(codesMut, position, inputs, result)
+
+proc getAllPhaseCombinations(): seq[seq[int]] =
+  for i in 01234..43210:
+    var valid = true
+    let s = $i
+    for c in ['0', '1', '2', '3', '4']:
+      if c notin s:
+        valid = false
+        break
+    if valid:
+      result.add(s[0..^1].mapIt(($it).parseInt()))
 
 when isMainModule:
   addHandler(newConsoleLogger(levelThreshold = lvlInfo))
+  const allPhaseCombinations = getAllPhaseCombinations()
   let codes = readFile("input.txt").strip().split(",").map(parseInt)
-  for id in 'A'..'E':
-    echo(&"Processing for Amp {id}")
-    discard processAll(codes)
+
+  var largest = 0
+  for phase in allPhaseCombinations:
+    var signal = 0
+    for i in 0..<5:
+      signal = processAll(codes, phase[i], signal)[0]
+    if signal > largest:
+      largest = signal
+  echo(largest)
